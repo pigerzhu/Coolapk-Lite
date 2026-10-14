@@ -1,7 +1,7 @@
 name: Build Coolapk Lite W10M ARM
 on:
   push:
-    branches: [fix/w10m-images]
+    branches: [master]
   workflow_dispatch:
 permissions:
   contents: read
