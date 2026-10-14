@@ -35,7 +35,7 @@ namespace CoolapkLite.ViewModels.Providers
             if (result.isSucceed)
             {
                 JArray array = result.result as JArray;
-                if (array.Count <= 0) { return; }
+                if (array == null || array.Count <= 0) { return; }
                 if (string.IsNullOrEmpty(_firstItem))
                 {
                     _firstItem = GetEntityID(array.First as JObject, _idName);
@@ -57,7 +57,7 @@ namespace CoolapkLite.ViewModels.Providers
             if (result.isSucceed)
             {
                 JArray array = result.result as JArray;
-                if (array.Count <= 0) { return models; }
+                if (array == null || array.Count <= 0) { return models; }
                 if (string.IsNullOrEmpty(_firstItem))
                 {
                     _firstItem = GetEntityID(array.First as JObject, _idName);
@@ -80,7 +80,7 @@ namespace CoolapkLite.ViewModels.Providers
             if (result.isSucceed)
             {
                 JArray array = result.result as JArray;
-                if (array.Count <= 0) { return 0; }
+                if (array == null || array.Count <= 0) { return 0; }
                 if (string.IsNullOrEmpty(_firstItem))
                 {
                     _firstItem = GetEntityID(array.First as JObject, _idName);
