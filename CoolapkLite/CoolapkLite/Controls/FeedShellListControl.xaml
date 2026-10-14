@@ -27,7 +27,11 @@
         HeaderMargin="{x:Bind HeaderMargin, Mode=OneWay}"
         ItemContainerStyle="{StaticResource DefaultCardItemStyle}"
         ItemTemplateSelector="{StaticResource CardTemplateSelector}"
-        ItemsPanel="{Binding Template, Source={StaticResource ItemsPanelSelector}}"
+        <!-- Feed detail tabs must stay a single virtualized column.  The global
+             staggered panel is intended for feed grids and makes variable-height
+             replies jump/recycle on the W10M ListView implementation. -->
+        ItemsPanel="{StaticResource DefaultItemsStackPanelTemplate}"
+        ItemContainerTransitions="{x:Null}"
         Loaded="ListView_Loaded"
         ShowsScrollingPlaceholders="False"
         ShyHeaderItemSource="{x:Bind ItemSource, Mode=TwoWay}"

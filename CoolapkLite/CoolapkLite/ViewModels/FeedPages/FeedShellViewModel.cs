@@ -343,12 +343,16 @@ namespace CoolapkLite.ViewModels.FeedPages
         private IEnumerable<Entity> GetEntities(JObject json)
         {
             string entityType = json.Value<string>("entityType");
-            // The replyList endpoint has returned both feed_reply and reply on
-            // different feed kinds.  Treat either explicit reply type as a
-            // comment instead of silently inserting a NullEntity.
-            if (string.Equals(entityType, "feed_reply", StringComparison.OrdinalIgnoreCase)
+            // replyList has used several entityType spellings over time.  Some
+            // image feeds omit entityType entirely, so identify a reply by its
+            // stable payload as a fallback instead of dropping it.
+            bool isReply = string.Equals(entityType, "feed_reply", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(entityType, "reply", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(entityType, "feedReply", StringComparison.OrdinalIgnoreCase))
+                || string.Equals(entityType, "feedReply", StringComparison.OrdinalIgnoreCase)
+                || (json.Value<int?>("id") != null
+                    && (json["userInfo"] is JObject || json["user_info"] is JObject)
+                    && json["message"] != null);
+            if (isReply)
             {
                 yield return new FeedReplyModel(json);
             }
