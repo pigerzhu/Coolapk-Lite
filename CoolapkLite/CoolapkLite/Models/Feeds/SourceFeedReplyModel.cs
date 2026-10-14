@@ -116,9 +116,15 @@ namespace CoolapkLite.Models.Feeds
                 Dateline = dateline.ToObject<long>().ConvertUnixTimeStampToDateTimeOffset();
             }
 
-            if (token.TryGetValue("picArr", out JToken picArr) && (picArr as JArray).Count > 0 && !string.IsNullOrEmpty((picArr as JArray)[0].ToString()))
+            // Newer responses sometimes omit picArr or return null for text-only
+            // replies.  Do not dereference the cast before checking it; this used
+            // to terminate the comments page when an image feed contained such a
+            // reply.
+            token.TryGetValue("picArr", out JToken picArr);
+            JArray pictures = picArr as JArray;
+            if (pictures != null && pictures.Count > 0 && !string.IsNullOrEmpty(pictures[0]?.ToString()))
             {
-                PicArr = picArr.Where(x => !string.IsNullOrEmpty(x?.ToString()))
+                PicArr = pictures.Where(x => !string.IsNullOrEmpty(x?.ToString()))
                                .Select(x => new ImageModel(x.ToString(), ImageType.SmallImage))
                                .ToImmutableArray();
 

@@ -77,7 +77,9 @@ namespace CoolapkLite.Pages.BrowserPages
         private void WebView_NavigationStarting(WebView sender, WebViewNavigationStartingEventArgs args)
         {
             _ = this.ShowProgressBarAsync();
-            if (Provider.IsChangeBrowserUA || args.Uri.Host.Contains("coolapk", StringComparison.OrdinalIgnoreCase))
+            // Keep the account page's navigation and form submissions on the same
+            // browser identity. API headers belong to API requests, not login HTML.
+            if (!Provider.IsLoginPage && Provider.IsChangeBrowserUA)
             {
                 WebView.NavigationStarting -= WebView_NavigationStarting;
                 args.Cancel = true;

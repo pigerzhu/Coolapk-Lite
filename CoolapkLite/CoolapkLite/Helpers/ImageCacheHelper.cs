@@ -42,7 +42,46 @@ namespace CoolapkLite.Helpers
         private static Dictionary<CoreDispatcher, BitmapImage> DarkNoPicMode { get; set; } = new Dictionary<CoreDispatcher, BitmapImage>();
         private static Dictionary<CoreDispatcher, BitmapImage> WhiteNoPicMode { get; set; } = new Dictionary<CoreDispatcher, BitmapImage>();
 
-        static ImageCacheHelper() => ImageCache.Factory = () => new ImageCache(NetworkHelper.Client);
+        // Image CDN requests must not inherit API tokens or account cookies.
+        private static readonly HttpClient ImageClient = CreateImageClient();
+
+        private static HttpClient CreateImageClient()
+        {
+            var client = new HttpClient(new HttpClientHandler { UseCookies = false, MaxConnectionsPerServer = 8 });
+            client.Timeout = TimeSpan.FromSeconds(30);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0");
+            client.DefaultRequestHeaders.Accept.ParseAdd("image/jpeg,image/png,image/gif");
+            client.DefaultRequestHeaders.Referrer = new Uri("https://www.coolapk.com/");
+            return client;
+        }
+
+        static ImageCacheHelper() => ImageCache.Factory = () => new ImageCache(ImageClient);
+
+        private static Uri GetThumbnailUri(Uri uri)
+        {
+            // Append to the path, never after a query string or fragment.
+            if (!string.Equals(uri.Host, "image.coolapk.com", StringComparison.OrdinalIgnoreCase)
+                || !string.IsNullOrEmpty(uri.Query) || !string.IsNullOrEmpty(uri.Fragment)
+                || uri.AbsolutePath.EndsWith(".s.jpg", StringComparison.OrdinalIgnoreCase))
+            {
+                return uri;
+            }
+            return new Uri(uri.AbsoluteUri + ".s.jpg");
+        }
+
+        private static async Task LogImageFailureAsync(Uri uri, Exception error)
+        {
+            // No tokens, full URLs, cookies or account data in diagnostics.
+            try
+            {
+                var folder = ApplicationData.Current.LocalFolder;
+                var file = await folder.CreateFileAsync("image-errors.log", CreationCollisionOption.OpenIfExists);
+                var properties = await file.GetBasicPropertiesAsync();
+                if (properties.Size > 262144) { await FileIO.WriteTextAsync(file, string.Empty); }
+                await FileIO.AppendTextAsync(file, $"{DateTimeOffset.UtcNow:O} host={uri.Host} error={error.GetType().Name} hresult=0x{error.HResult:X8}\n");
+            }
+            catch { /* Diagnostics must not prevent loading other images. */ }
+        }
 
         public static async Task<BitmapImage> GetImageAsync(ImageType type, string url, CoreDispatcher dispatcher)
         {
@@ -61,8 +100,7 @@ namespace CoolapkLite.Helpers
             {
                 if (!type.HasFlag(ImageType.Message) && type.HasFlag(ImageType.Small))
                 {
-                    if (url.Contains("image.coolapk.com", StringComparison.OrdinalIgnoreCase)) { url += ".s.jpg"; }
-                    uri = url.TryGetUri();
+                    uri = GetThumbnailUri(uri);
                 }
 
                 ImageCache cache = await dispatcher.AwaitableRunAsync(() => ImageCache.Instance);
@@ -80,16 +118,18 @@ namespace CoolapkLite.Helpers
                         BitmapImage image = await cache.GetFromCacheAsync(uri, true);
                         return image;
                     }
-                    catch (Exception)
+                    catch (Exception error)
                     {
+                        await LogImageFailureAsync(uri, error).ConfigureAwait(false);
                         string str = ResourceLoader.GetForViewIndependentUse().GetString("ImageLoadError");
                         _ = dispatcher.ShowMessageAsync(str);
                         return null;
                     }
                 }
-                catch (Exception)
+                catch (Exception error)
                 {
-                    string str = ResourceLoader.GetForViewIndependentUse().GetString("ImageLoadError");
+                    await LogImageFailureAsync(uri, error).ConfigureAwait(false);
+                        string str = ResourceLoader.GetForViewIndependentUse().GetString("ImageLoadError");
                     _ = dispatcher.ShowMessageAsync(str);
                     return null;
                 }
@@ -116,8 +156,7 @@ namespace CoolapkLite.Helpers
             {
                 if (!type.HasFlag(ImageType.Message) && type.HasFlag(ImageType.Small))
                 {
-                    if (url.Contains("image.coolapk.com", StringComparison.OrdinalIgnoreCase)) { url += ".s.jpg"; }
-                    uri = url.TryGetUri();
+                    uri = GetThumbnailUri(uri);
                 }
 
                 try
@@ -139,16 +178,18 @@ namespace CoolapkLite.Helpers
                         StorageFile image = await ImageCache.Instance.GetFileFromCacheAsync(uri);
                         return image;
                     }
-                    catch (Exception)
+                    catch (Exception error)
                     {
+                        await LogImageFailureAsync(uri, error).ConfigureAwait(false);
                         string str = ResourceLoader.GetForViewIndependentUse().GetString("ImageLoadError");
                         _ = UIHelper.ShowMessageAsync(str);
                         return null;
                     }
                 }
-                catch (Exception)
+                catch (Exception error)
                 {
-                    string str = ResourceLoader.GetForViewIndependentUse().GetString("ImageLoadError");
+                    await LogImageFailureAsync(uri, error).ConfigureAwait(false);
+                        string str = ResourceLoader.GetForViewIndependentUse().GetString("ImageLoadError");
                     _ = UIHelper.ShowMessageAsync(str);
                     return null;
                 }

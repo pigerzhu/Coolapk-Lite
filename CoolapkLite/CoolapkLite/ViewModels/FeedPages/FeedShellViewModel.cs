@@ -342,7 +342,16 @@ namespace CoolapkLite.ViewModels.FeedPages
 
         private IEnumerable<Entity> GetEntities(JObject json)
         {
-            yield return json.Value<string>("entityType") == "feed_reply" ? new FeedReplyModel(json) : (Entity)new NullEntity();
+            string entityType = json.Value<string>("entityType");
+            // The replyList endpoint has returned both feed_reply and reply on
+            // different feed kinds.  Treat either explicit reply type as a
+            // comment instead of silently inserting a NullEntity.
+            if (string.Equals(entityType, "feed_reply", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(entityType, "reply", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(entityType, "feedReply", StringComparison.OrdinalIgnoreCase))
+            {
+                yield return new FeedReplyModel(json);
+            }
         }
 
         public void SetComboBoxSelectedIndex(int value)
