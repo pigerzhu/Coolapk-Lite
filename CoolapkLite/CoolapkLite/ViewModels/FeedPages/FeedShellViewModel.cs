@@ -112,7 +112,7 @@ namespace CoolapkLite.ViewModels.FeedPages
                 List<ShyHeaderItem> ItemSource = new List<ShyHeaderItem>(3);
                 if (ReplyItemSource == null || ReplyItemSource.ID != ID)
                 {
-                    ReplyItemSource = new ReplyItemSource(ID);
+                    ReplyItemSource = new ReplyItemSource(ID, FeedDetail.FeedType);
                     ReplyItemSource.LoadMoreStarted += OnLoadMoreStarted;
                     ReplyItemSource.LoadMoreCompleted += OnLoadMoreCompleted;
                 }
@@ -310,9 +310,12 @@ namespace CoolapkLite.ViewModels.FeedPages
             }
         }
 
-        public ReplyItemSource(string id)
+        private readonly string feedType;
+
+        public ReplyItemSource(string id, string feedType = "feed")
         {
             ID = id;
+            this.feedType = string.IsNullOrWhiteSpace(feedType) ? "feed" : feedType;
             ResourceLoader loader = ResourceLoader.GetForViewIndependentUse("FeedShellPage");
             ItemSource = new List<string>(3)
             {
@@ -334,6 +337,7 @@ namespace CoolapkLite.ViewModels.FeedPages
                     p,
                     string.IsNullOrEmpty(firstItem) ? string.Empty : $"&firstItem={firstItem}",
                     string.IsNullOrEmpty(lastItem) ? string.Empty : $"&lastItem={lastItem}",
+                    feedType,
                     toggleIsOn ? 1 : 0),
                 GetEntities,
                 "id");

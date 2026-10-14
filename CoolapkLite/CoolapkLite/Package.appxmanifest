@@ -11,7 +11,7 @@
   <Identity
     Name="Pigerzhu.CoolapkLite.Test"
     Publisher="CN=pigerzhu"
-    Version="0.0.3.4" />
+    Version="0.0.3.5" />
 
   <mp:PhoneIdentity PhoneProductId="239bc90b-17e8-4559-89b8-7c5e7c2e6617" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
 
