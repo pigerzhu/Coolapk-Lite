@@ -18,7 +18,7 @@ jobs:
           New-Item -ItemType Directory artifacts -Force | Out-Null
           $cert = New-SelfSignedCertificate -Type Custom -Subject 'CN=2C3A37C0-35FC-4839-B08C-751C1C1AFBF5' -KeyUsage DigitalSignature -FriendlyName 'pigerzhu Coolapk Lite test build' -CertStoreLocation 'Cert:\CurrentUser\My' -TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.3')
           Export-Certificate -Cert $cert -FilePath artifacts/CoolapkLite-test.cer | Out-Null
-          msbuild CoolapkLite/CoolapkLite/CoolapkLite.csproj /restore /t:Rebuild /p:Configuration=Release /p:Platform=ARM /p:IsUseNetCore463=False /p:AppxBundle=Never /p:AppxPackageSigningEnabled=true "/p:PackageCertificateThumbprint=$($cert.Thumbprint)" /p:GenerateAppxPackageOnBuild=true "/p:AppxPackageDir=$pwd\artifacts\" /fl /flp:logfile=artifacts/build.log
+          msbuild CoolapkLite/CoolapkLite/CoolapkLite.csproj /restore /t:Rebuild /p:Configuration=Release /p:Platform=ARM /p:IsUseNetCore463=False /p:AppxBundle=Never /p:AppxPackageSigningEnabled=true "/p:PackageCertificateThumbprint=$($cert.Thumbprint)" /p:GeneratePackageOnBuild=false /p:GenerateAppxPackageOnBuild=true "/p:AppxPackageDir=$pwd\artifacts\" /fl /flp:logfile=artifacts/build.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@v4
         if: always()
